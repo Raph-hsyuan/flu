@@ -27,6 +27,7 @@ public class Simulator {
     private static final double SICK_CHANCE = 0.5;
     private static final double SICK_ANIMAL_CHANCE = 0.5;
     private static final double ACCIDENT_CHANCE = 0;
+    private static final double DIE_ANIMAL_CHANCE = 0.2;
     private static final int NOMBER_HUMAN = 40;
     private static final int NOMBER_CHICKEN = 15;
     private static final int NOMBER_PIG = 10;
@@ -50,51 +51,57 @@ public class Simulator {
                 for (int y = 0; y < SIZE; y++) {
                     Location location = sandbox.getLocation(x, y);
                     Vivant vivant = location.getVivant();
-                    if (!location.isVide() && location.getVivant().toString().equals("H")) {
-                        if(vivant.getState().equals(DEAD)) { 
-                            location.removeVivant();
-                            continue;
-                        }
-                        Event event = dectEvent(location);
-                        State state1 = vivant.getState();
-                        State state2 = dict.get(state1).get(event).get();
-                        vivant.setState(state2);
-                        switch(vivant.getState()) {
-                        case HEALTHY : 
-                            health++;
-                            break;
-                        case INFECTED:
-                            health++;
-                            break;
-                        case CONTAGIOUS_AND_SICK :
-                            sick++;
-                            contagious++;
-                            break;
-                        case CONTAGIOUS_NOT_SICK :
-                            contagious++;
-                            break;
-                        case CONTAGIOUS:
-                            contagious++;
-                            break;
-                        case RECOVERED:
-                            recovered++;
-                            break;
-                        case DEAD:
-                            dead++;
-                            break;
-                        default:
-                            break;
+                    if (!location.isVide()) {
+                        if (location.getVivant().toString().equals("H")) {
+                            if (vivant.getState().equals(DEAD)) {
+                                location.removeVivant();
+                                continue;
+                            }
+                            Event event = dectEvent(location);
+                            State state1 = vivant.getState();
+                            State state2 = dict.get(state1).get(event).get();
+                            vivant.setState(state2);
+                            switch (vivant.getState()) {
+                            case HEALTHY:
+                                health++;
+                                break;
+                            case INFECTED:
+                                health++;
+                                break;
+                            case CONTAGIOUS_AND_SICK:
+                                sick++;
+                                contagious++;
+                                break;
+                            case CONTAGIOUS_NOT_SICK:
+                                contagious++;
+                                break;
+                            case CONTAGIOUS:
+                                contagious++;
+                                break;
+                            case RECOVERED:
+                                recovered++;
+                                break;
+                            case DEAD:
+                                dead++;
+                                break;
+                            default:
+                                break;
+                            }
+                        } else {
+                            if(vivant.getState().equals(CONTAGIOUS)&&Math.random() < DIE_ANIMAL_CHANCE)
+                                vivant.setState(DEAD);
+                            
                         }
                     }
                 }
             System.out.println("\n*******************");
             System.out.println("\nDAY: " + i);
             System.out.println(this);
-            System.out.println("REPORT:\nsick : "+sick);
-            System.out.println("healthy : "+health);
-            System.out.println("contagious : "+contagious);
-            System.out.println("recovered : "+recovered);
-            System.out.println("dead : "+dead);
+            System.out.println("REPORT:\nsick : " + sick);
+            System.out.println("healthy : " + health);
+            System.out.println("contagious : " + contagious);
+            System.out.println("recovered : " + recovered);
+            System.out.println("dead : " + dead);
         }
     }
 
