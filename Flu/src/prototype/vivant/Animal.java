@@ -6,5 +6,5 @@ package prototype.vivant;
  * @email shenyuan.huang@etu.unice.fr
  */
 public interface Animal extends Vivant {
-
+    
 }

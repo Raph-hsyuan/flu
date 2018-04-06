@@ -14,6 +14,7 @@ import prototype.vivant.Chicken;
 import prototype.vivant.Human;
 import prototype.vivant.Pig;
 import prototype.vivant.Vivant;
+import prototype.vivant.virus.Virus;
 
 /**
  * @author HUANG Shenyuan
@@ -21,13 +22,14 @@ import prototype.vivant.Vivant;
  * @email shenyuan.huang@etu.unice.fr
  */
 public class Simulator {
-    private static final double INFECTED_CHANCE = 0.1;
-    private static final double RECOVER_CHANCE = 1;
-    private static final double DIE_CHANCE = 0.1;
-    private static final double SICK_CHANCE = 0.5;
-    private static final double SICK_ANIMAL_CHANCE = 0.5;
-    private static final double ACCIDENT_CHANCE = 0;
-    private static final double DIE_ANIMAL_CHANCE = 0.2;
+    private double infect = 0.1;
+    private double recover = 1;
+    private double die = 0.1;
+    private double sick = 0.5;
+    private double dieAnimal = 0.2;
+
+    private static final double ACCIDENT_RATE = 0;
+    private static final double SICK_ANIMAL_RATE = 0.5;
     private static final int NOMBER_HUMAN = 40;
     private static final int NOMBER_CHICKEN = 15;
     private static final int NOMBER_PIG = 10;
@@ -38,13 +40,23 @@ public class Simulator {
         buildDict();
         initial();
     }
+    Virus H1N1= new Virus("H1N1",0.2,0.4,0.5,0.5,0.2);
+    Virus HHHH= new Virus("HHHH",0.5,0.5,0.5,0.5,0.5);
+    
+    private void setProperty(Virus virus) {
+        infect = virus.getInfectrate();
+        recover = virus.getRecoverrate();
+        die = virus.getDeadrate();
+        sick = virus.getSickrate();
+        dieAnimal = virus.getADeadrate();
+    }
 
     void run(int days) {
         int dead = 0;
         for (int i = 0; i < days; i++) {
             move();
-            int sick = 0;
-            int health = 0;
+            int sicker = 0;
+            int healther = 0;
             int recovered = 0;
             int contagious = 0;
             for (int x = 0; x < SIZE; x++)
@@ -52,24 +64,27 @@ public class Simulator {
                     Location location = sandbox.getLocation(x, y);
                     Vivant vivant = location.getVivant();
                     if (!location.isVide()) {
-                        if (location.getVivant().toString().equals("H")) {
+                        if (vivant.toString().equals("H")) {
                             if (vivant.getState().equals(DEAD)) {
                                 location.removeVivant();
                                 continue;
                             }
                             Event event = dectEvent(location);
                             State state1 = vivant.getState();
+                            if (state1.equals(CONTAGIOUS) || state1.equals(CONTAGIOUS_AND_SICK)
+                                    || state1.equals(CONTAGIOUS_NOT_SICK))
+                                setProperty(vivant.getVirus());
                             State state2 = dict.get(state1).get(event).get();
                             vivant.setState(state2);
                             switch (vivant.getState()) {
                             case HEALTHY:
-                                health++;
+                                healther++;
                                 break;
                             case INFECTED:
-                                health++;
+                                healther++;
                                 break;
                             case CONTAGIOUS_AND_SICK:
-                                sick++;
+                                sicker++;
                                 contagious++;
                                 break;
                             case CONTAGIOUS_NOT_SICK:
@@ -88,17 +103,17 @@ public class Simulator {
                                 break;
                             }
                         } else {
-                            if(vivant.getState().equals(CONTAGIOUS)&&Math.random() < DIE_ANIMAL_CHANCE)
+                            if (vivant.getState().equals(CONTAGIOUS) && Math.random() < dieAnimal)
                                 vivant.setState(DEAD);
-                            
+
                         }
                     }
                 }
             System.out.println("\n*******************");
             System.out.println("\nDAY: " + i);
             System.out.println(this);
-            System.out.println("REPORT:\nsick : " + sick);
-            System.out.println("healthy : " + health);
+            System.out.println("REPORT:\nsick : " + sicker);
+            System.out.println("healthy : " + healther);
             System.out.println("contagious : " + contagious);
             System.out.println("recovered : " + recovered);
             System.out.println("dead : " + dead);
@@ -128,10 +143,13 @@ public class Simulator {
                     Vivant vivant = location.getVivant();
                     switch (vivant.getState()) {
                     case CONTAGIOUS:
+                        centre.setVirus(vivant.getVirus());
                         return CONTACT;
                     case CONTAGIOUS_AND_SICK:
+                        centre.setVirus(vivant.getVirus());
                         return CONTACT;
                     case CONTAGIOUS_NOT_SICK:
+                        centre.setVirus(vivant.getVirus());
                         return CONTACT;
                     default:
                         break;
@@ -144,18 +162,18 @@ public class Simulator {
     }
 
     void buildDict() {
-        put(HEALTHY, CONTACT, () -> Math.random() > INFECTED_CHANCE ? HEALTHY : INFECTED);
-        put(INFECTED, INCUBATION_TIME, () -> Math.random() < SICK_CHANCE ? CONTAGIOUS : INFECTED);
-        put(CONTAGIOUS, CONTAGIOUS_TIME, () -> Math.random() < SICK_CHANCE ? CONTAGIOUS_AND_SICK : CONTAGIOUS_NOT_SICK);
-        put(CONTAGIOUS_NOT_SICK, CONTAGIOUS_TIME, () -> Math.random() < SICK_CHANCE ? CONTAGIOUS_AND_SICK : RECOVERING);
-        put(RECOVERING, RECOVERING_TIME, () -> Math.random() < RECOVER_CHANCE ? RECOVERED : RECOVERING);
-        put(CONTAGIOUS_AND_SICK, CONTAGIOUS_TIME, () -> Math.random() < DIE_CHANCE ? DEAD : RECOVERING);
-        put(HEALTHY, NOTHING, () -> Math.random() > ACCIDENT_CHANCE ? HEALTHY : DEAD);
-        put(INFECTED, NOTHING, () -> Math.random() > ACCIDENT_CHANCE ? HEALTHY : DEAD);
-        put(CONTAGIOUS, NOTHING, () -> Math.random() > ACCIDENT_CHANCE ? HEALTHY : DEAD);
-        put(CONTAGIOUS_NOT_SICK, NOTHING, () -> Math.random() > ACCIDENT_CHANCE ? CONTAGIOUS_NOT_SICK : DEAD);
-        put(CONTAGIOUS_AND_SICK, NOTHING, () -> Math.random() > ACCIDENT_CHANCE ? CONTAGIOUS_AND_SICK : DEAD);
-        put(RECOVERED, NOTHING, () -> Math.random() > ACCIDENT_CHANCE ? RECOVERED : DEAD);
+        put(HEALTHY, CONTACT, () -> Math.random() > infect ? HEALTHY : INFECTED);
+        put(INFECTED, INCUBATION_TIME, () -> Math.random() < sick ? CONTAGIOUS : INFECTED);
+        put(CONTAGIOUS, CONTAGIOUS_TIME, () -> Math.random() < sick ? CONTAGIOUS_AND_SICK : CONTAGIOUS_NOT_SICK);
+        put(CONTAGIOUS_NOT_SICK, CONTAGIOUS_TIME, () -> Math.random() < sick ? CONTAGIOUS_AND_SICK : RECOVERING);
+        put(RECOVERING, RECOVERING_TIME, () -> Math.random() < recover ? RECOVERED : RECOVERING);
+        put(CONTAGIOUS_AND_SICK, CONTAGIOUS_TIME, () -> Math.random() < die ? DEAD : RECOVERING);
+        put(HEALTHY, NOTHING, () -> Math.random() > ACCIDENT_RATE ? HEALTHY : DEAD);
+        put(INFECTED, NOTHING, () -> Math.random() > ACCIDENT_RATE ? HEALTHY : DEAD);
+        put(CONTAGIOUS, NOTHING, () -> Math.random() > ACCIDENT_RATE ? HEALTHY : DEAD);
+        put(CONTAGIOUS_NOT_SICK, NOTHING, () -> Math.random() > ACCIDENT_RATE ? CONTAGIOUS_NOT_SICK : DEAD);
+        put(CONTAGIOUS_AND_SICK, NOTHING, () -> Math.random() > ACCIDENT_RATE ? CONTAGIOUS_AND_SICK : DEAD);
+        put(RECOVERED, NOTHING, () -> Math.random() > ACCIDENT_RATE ? RECOVERED : DEAD);
     }
 
     void initial() {
@@ -164,14 +182,18 @@ public class Simulator {
         }
         for (int i = 0; i < NOMBER_CHICKEN; i++) {
             Vivant aChicken = new Chicken();
-            if (Math.random() < SICK_ANIMAL_CHANCE)
+            if (Math.random() < SICK_ANIMAL_RATE) {
+                aChicken.setVirus(H1N1);
                 aChicken.setState(CONTAGIOUS);
+            }
             sandbox.addVivant(aChicken);
         }
         for (int i = 0; i < NOMBER_PIG; i++) {
             Vivant aPig = new Pig();
-            if (Math.random() < SICK_ANIMAL_CHANCE)
+            if (Math.random() < SICK_ANIMAL_RATE) {
                 aPig.setState(CONTAGIOUS);
+                aPig.setVirus(HHHH);
+            }
             sandbox.addVivant(aPig);
         }
     }

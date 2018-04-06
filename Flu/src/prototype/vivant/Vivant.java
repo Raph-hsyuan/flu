@@ -1,6 +1,7 @@
 package prototype.vivant;
 
 import prototype.affair.State;
+import prototype.vivant.virus.Virus;
 
 /**
  * @author HUANG Shenyuan
@@ -10,4 +11,6 @@ import prototype.affair.State;
 public interface Vivant {
     State getState();
     void setState(State state);
+    Virus getVirus();
+    void setVirus(Virus virus);
 }

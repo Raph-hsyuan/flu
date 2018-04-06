@@ -1,6 +1,7 @@
 package prototype.vivant;
 
 import prototype.affair.State;
+import prototype.vivant.virus.Virus;
 
 /**
  * @author HUANG Shenyuan
@@ -8,12 +9,22 @@ import prototype.affair.State;
  * @email shenyuan.huang@etu.unice.fr
  */
 public class Chicken implements Animal {
-    State state;
-
+    private State state;
+    private Virus virus;
     public Chicken() {
         state = State.HEALTHY;
     }
 
+    @Override
+    public void setVirus(Virus virus) {
+        this.virus=virus;
+    }
+    
+    @Override
+    public Virus getVirus() {
+        return virus;
+    }
+    
     @Override
     public String toString() {
         return "C";

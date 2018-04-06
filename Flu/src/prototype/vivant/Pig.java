@@ -1,6 +1,7 @@
 package prototype.vivant;
 
 import prototype.affair.State;
+import prototype.vivant.virus.Virus;
 
 /**
  * @author HUANG Shenyuan
@@ -8,7 +9,8 @@ import prototype.affair.State;
  * @email shenyuan.huang@etu.unice.fr
  */
 public class Pig implements Animal {
-    State state;
+    private State state;
+    private Virus virus;
     public Pig(){
         state=State.HEALTHY;
     }
@@ -26,5 +28,15 @@ public class Pig implements Animal {
     @Override
     public void setState(State state) {
         this.state=state;       
+    }
+    
+    @Override
+    public void setVirus(Virus virus) {
+        this.virus=virus;
+    }
+    
+    @Override
+    public Virus getVirus() {
+        return virus;
     }
 }
