@@ -4,17 +4,21 @@ import static prototype.affair.Event.*;
 import static prototype.affair.State.*;
 import static prototype.core.Sandbox.SIZE;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import prototype.graph.SimulatorView;
 import prototype.affair.Event;
 import prototype.affair.State;
 import prototype.vivant.Chicken;
 import prototype.vivant.Human;
 import prototype.vivant.Pig;
 import prototype.vivant.Vivant;
-import prototype.vivant.virus.Virus;
+import prototype.virus.Virus;
 
 /**
  * @author HUANG Shenyuan
@@ -22,33 +26,68 @@ import prototype.vivant.virus.Virus;
  * @email shenyuan.huang@etu.unice.fr
  */
 public class Simulator {
-    private double infect = 0.1;
-    private double recover = 1;
-    private double die = 0.1;
+    private double infect = 0.5;
+    private double recover = 0.2;
+    private double die = 0.5;
     private double sick = 0.5;
-    private double dieAnimal = 0.2;
-
+    private double dieAnimal = 0.5;
+    private static int step = 0;
     private static final double ACCIDENT_RATE = 0;
-    private static final double SICK_ANIMAL_RATE = 0.5;
-    private static final int NOMBER_HUMAN = 40;
-    private static final int NOMBER_CHICKEN = 15;
-    private static final int NOMBER_PIG = 10;
+    private static final double SICK_ANIMAL_RATE = 0.2;
+    private static final int NOMBER_HUMAN = 18000;
+    private static final int NOMBER_CHICKEN = 400;
+    private static final int NOMBER_PIG = 600;
     private Sandbox sandbox = new Sandbox();
     private final Map<State, Map<Event, Supplier<State>>> dict = new HashMap<>();
+    private List<SimulatorView> views = new ArrayList<>();
 
-    Simulator() {
+    public Simulator(SimulatorView... views) {
         buildDict();
-        initial();
+        setHuman(NOMBER_HUMAN);
+        setChicken(NOMBER_CHICKEN);
+        setPig(NOMBER_PIG);
+        Arrays.asList(views).forEach(v -> this.views.add(v));
     }
-    Virus H1N1= new Virus("H1N1",0.2,0.4,0.5,0.5,0.2);
-    Virus HHHH= new Virus("HHHH",0.5,0.5,0.5,0.5,0.5);
-    
+
+    Virus H1N1 = new Virus("H1N1", 0.2, 0.4, 0.5, 0.5, 0.2);
+    Virus HHHH = new Virus("HHHH", 0.5, 0.5, 0.5, 0.5, 0.5);
+
     private void setProperty(Virus virus) {
         infect = virus.getInfectrate();
         recover = virus.getRecoverrate();
         die = virus.getDeadrate();
         sick = virus.getSickrate();
         dieAnimal = virus.getADeadrate();
+    }
+
+    public int simulateOneStep() {
+        step++;
+        move();
+        for (int x = 0; x < SIZE; x++)
+            for (int y = 0; y < SIZE; y++) {
+                Location location = sandbox.getLocation(x, y);
+                Vivant vivant = location.getVivant();
+                if (!location.isVide()) {
+                    if (vivant.toString().equals("H")) {
+                        if (vivant.getState().equals(DEAD)) {
+                            location.removeVivant();
+                            continue;
+                        }
+                        Event event = dectEvent(location);
+                        State state1 = vivant.getState();
+                        if (state1.equals(CONTAGIOUS) || state1.equals(CONTAGIOUS_AND_SICK)
+                                || state1.equals(CONTAGIOUS_NOT_SICK))
+                            setProperty(vivant.getVirus());
+                        State state2 = dict.get(state1).get(event).get();
+                        vivant.setState(state2);
+                    } else {
+                        if (vivant.getState().equals(CONTAGIOUS) && Math.random() < dieAnimal)
+                            vivant.setState(DEAD);
+                    }
+                }
+            }
+        updateViews();
+        return step;
     }
 
     void run(int days) {
@@ -176,10 +215,24 @@ public class Simulator {
         put(RECOVERED, NOTHING, () -> Math.random() > ACCIDENT_RATE ? RECOVERED : DEAD);
     }
 
-    void initial() {
-        for (int i = 0; i < NOMBER_HUMAN; i++) {
+    void setHuman(int number) {
+        for (int i = 0; i < number; i++) {
             sandbox.addVivant(new Human());
         }
+    }
+
+    void setPig(int number) {
+        for (int i = 0; i < number; i++) {
+            Vivant aPig = new Pig();
+            if (Math.random() < SICK_ANIMAL_RATE) {
+                aPig.setState(CONTAGIOUS);
+                aPig.setVirus(HHHH);
+            }
+            sandbox.addVivant(aPig);
+        }
+    }
+
+    void setChicken(int number) {
         for (int i = 0; i < NOMBER_CHICKEN; i++) {
             Vivant aChicken = new Chicken();
             if (Math.random() < SICK_ANIMAL_RATE) {
@@ -187,14 +240,6 @@ public class Simulator {
                 aChicken.setState(CONTAGIOUS);
             }
             sandbox.addVivant(aChicken);
-        }
-        for (int i = 0; i < NOMBER_PIG; i++) {
-            Vivant aPig = new Pig();
-            if (Math.random() < SICK_ANIMAL_RATE) {
-                aPig.setState(CONTAGIOUS);
-                aPig.setVirus(HHHH);
-            }
-            sandbox.addVivant(aPig);
         }
     }
 
@@ -211,6 +256,19 @@ public class Simulator {
     @Override
     public String toString() {
         return sandbox.toString();
+    }
+
+    /**
+     * @param step2
+     * @return
+     */
+    public boolean isViable(int step2) {
+        // TODO Auto-generated method stub
+        return step2<=10000;
+    }
+    
+    private void updateViews() {
+        views.forEach(v -> v.showStatus(step, this.sandbox));
     }
 
 }

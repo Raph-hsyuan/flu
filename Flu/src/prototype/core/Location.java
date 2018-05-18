@@ -31,7 +31,7 @@ public class Location {
         this.vivant = vivant;
     }
 
-    Vivant getVivant() {
+    public Vivant getVivant() {
         return this.vivant;
     }
 

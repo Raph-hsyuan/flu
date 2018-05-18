@@ -1,7 +1,7 @@
 package prototype.vivant;
 
 import prototype.affair.State;
-import prototype.vivant.virus.Virus;
+import prototype.virus.Virus;
 
 /**
  * @author HUANG Shenyuan
