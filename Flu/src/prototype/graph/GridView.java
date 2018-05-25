@@ -15,6 +15,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import prototype.core.Sandbox;
 import prototype.vivant.*;
+import static prototype.affair.State.*;
 
 /**
  * A graphical view of the simulation grid. The view displays a colored
@@ -44,7 +45,7 @@ public class GridView implements SimulatorView {
     private final Map<Class<? extends Vivant>, Color> colors
             = new HashMap<Class<? extends Vivant>, Color>() {{
                 put(Human.class, Color.ORANGE);
-                put(Pig.class, Color.BLUE);
+                put(Pig.class, Color.PINK);
                 put(Chicken.class, Color.YELLOW);
             }};
     // A statistics object computing and storing simulation information
@@ -132,15 +133,13 @@ public class GridView implements SimulatorView {
      * @return The color to be used for a given class of animal.
      */
     private Color getColor(Vivant vivant) {
-        if(!vivant.getState().equals(prototype.affair.State.DEAD)) {
-            if(!vivant.getState().equals(prototype.affair.State.HEALTHY))
-                return Color.RED;
-        }else
+        if(vivant.getState().equals(DEAD))
             return Color.BLACK;
-        if(vivant.getState().equals(prototype.affair.State.RECOVERED))
+        if(vivant.getState().equals(RECOVERED))
             return Color.GREEN;
-        Color col = colors.get(vivant.getClass());
-        return col == null ? UNKNOWN_COLOR : col;
+        if(!vivant.getState().equals(HEALTHY))
+            return Color.RED;
+        return colors.get(vivant.getClass());
     }
 
     /**
@@ -159,8 +158,9 @@ public class GridView implements SimulatorView {
         fieldView.preparePaint();
         for (int row = 0; row < Sandbox.SIZE; row++) {
             for (int col = 0; col < Sandbox.SIZE; col++) {
-                Vivant animal = field.getLocation(row, col).getVivant();
-                if (animal != null) {
+                boolean isVide = field.getLocation(row, col).isVide();
+                if (!isVide) {
+                    Vivant animal = field.getLocation(row, col).getVivant();
                     stats.incrementCount(animal.getClass());
                     fieldView.drawMark(col,
                             row, getColor(animal));

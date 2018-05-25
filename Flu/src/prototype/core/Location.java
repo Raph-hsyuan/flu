@@ -43,7 +43,7 @@ public class Location {
 
     }
 
-    boolean isVide() {
+    public boolean isVide() {
         return isVide;
     }
 

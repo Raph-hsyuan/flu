@@ -5,14 +5,14 @@ import java.util.List;
 import java.util.Random;
 
 import prototype.vivant.Vivant;
-
+import static prototype.affair.State.*;
 /**
  * @author HUANG Shenyuan
  * @date 2018-02-23 09:23
  * @email shenyuan.huang@etu.unice.fr
  */
 public class Sandbox {
-    public static final int SIZE = 200;
+    public static final int SIZE = 100;
     final Location[][] locations = new Location[SIZE][SIZE];
     private List<Location> videSpace = new ArrayList<>();
     private Random rand = new Random();
@@ -89,8 +89,8 @@ public class Sandbox {
     @Override
     public String toString() {
         StringBuilder table = new StringBuilder();
-        for (int y = 0; y < SIZE; y++) {
-            for (int x = 0; x < SIZE; x++) {
+        for (int x = 0; x < SIZE; x++) {
+            for (int y = 0; y < SIZE; y++) {
                 table.append(locations[x][y].toString());
             }
             table.append("\n");
@@ -98,4 +98,13 @@ public class Sandbox {
         return table.toString();
     }
 
+    void removeDead() {
+        for (int y = 0; y < SIZE; y++) {
+            for (int x = 0; x < SIZE; x++) {
+                Vivant find = locations[x][y].getVivant();
+                if(!locations[x][y].isVide()&&find.getState().equals(DEAD))
+                    locations[x][y].removeVivant();
+            }
+        }
+    }
 }
