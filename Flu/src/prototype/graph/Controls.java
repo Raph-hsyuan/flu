@@ -21,10 +21,6 @@ public class Controls implements SimulatorView {
     private AnimationTimer timer;
         Slider speedSlider;
 
-    // public Controls(AnimationTimer timer) {
-    //     this.timer = timer;
-    // }
-
     @Override
     public void start() {
         Stage stage = new Stage();

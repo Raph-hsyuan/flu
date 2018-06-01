@@ -14,6 +14,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import prototype.core.Sandbox;
+import prototype.core.Simulator;
 import prototype.vivant.*;
 import static prototype.affair.State.*;
 
@@ -29,16 +30,15 @@ import static prototype.affair.State.*;
 @SuppressWarnings("serial")
 public class GridView implements SimulatorView {
     private static GridView instance;
-    private static final int DELAY_BETWEEN_ITERATIONS = 100;  // msecs
     private static final int LABEL_HEIGHT = 50;
     // Colors used for empty locations.
     private static final Color EMPTY_COLOR = Color.WHITE;
-    // Color used for objects that have no defined color.
-    private static final Color UNKNOWN_COLOR = Color.GRAY;
-    private final String STEP_PREFIX = "Step: ";
+    private final String STEP_PREFIX = "Day: ";
     private final String POPULATION_PREFIX = "Population: ";
+    private final String DETAIL_PREFIX = "Detail: ";
     private Label stepLabel;
     private Label populationLbl;
+    private Label detailLable;
     private FieldView fieldView;
 
     // A map for storing colors for participants in the simulation
@@ -68,8 +68,8 @@ public class GridView implements SimulatorView {
      *            The simulation's width.
      */
     public GridView(int height, int width) {
-        this.width = width;
-        this.height = height;
+        this.width = width+20;
+        this.height = height+20;
         stats = new FieldStats();
         fieldView = new FieldView(height, width);
         instance = this;
@@ -89,21 +89,27 @@ public class GridView implements SimulatorView {
     public void start() {
 
         Stage stage = new Stage();
-        stage.setTitle("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh");
+        stage.setTitle("Flu");
         root = new BorderPane();
 
         stepLabel = new Label(STEP_PREFIX);
         stepLabel.setAlignment(Pos.CENTER);
         stepLabel.setMinHeight(LABEL_HEIGHT);
         root.setTop(stepLabel);
-        BorderPane.setAlignment(root.getTop(), Pos.CENTER);
+        BorderPane.setAlignment(root.getTop(), Pos.BOTTOM_CENTER);
 
         populationLbl = new Label(POPULATION_PREFIX);
         populationLbl.setAlignment(Pos.CENTER);
         populationLbl.setMinHeight(LABEL_HEIGHT);
         root.setBottom(populationLbl);
-        BorderPane.setAlignment(root.getBottom(), Pos.CENTER);
+        BorderPane.setAlignment(root.getTop(), Pos.BOTTOM_RIGHT);
 
+        detailLable = new Label(DETAIL_PREFIX);
+        detailLable.setAlignment(Pos.CENTER);
+        detailLable.setMinHeight(LABEL_HEIGHT);
+        root.setLeft(detailLable);
+        BorderPane.setAlignment(root.getTop(), Pos.BOTTOM_CENTER);
+        
         root.setCenter(fieldView);
         stage.setScene(new Scene(root,
                 width * FieldView.GRID_VIEW_SCALING_FACTOR,
@@ -154,6 +160,14 @@ public class GridView implements SimulatorView {
     @Override
     public void showStatus(int step, Sandbox field) {
         stepLabel.setText(STEP_PREFIX + step);
+        StringBuilder detail = new StringBuilder();
+        detail.append("\nhealther: " + Simulator.getHealther()+"\n");
+        detail.append("sicker: " + Simulator.getSicker()+"\n");
+        detail.append("contagious: " + Simulator.getContagious()+"\n");
+        detail.append("recovered: " + Simulator.getRecovered()+"\n");
+        detail.append("dead: " + Simulator.getDead()+"\n");
+        
+        detailLable.setText(DETAIL_PREFIX + detail);
         stats.reset();
         fieldView.preparePaint();
         for (int row = 0; row < Sandbox.SIZE; row++) {

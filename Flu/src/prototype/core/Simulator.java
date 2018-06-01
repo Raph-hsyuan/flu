@@ -26,22 +26,31 @@ import prototype.virus.Virus;
  * @email shenyuan.huang@etu.unice.fr
  */
 public class Simulator {
-    private double infect = 0.2;
-    private double recover = 0.3;
+    private double infect = 0.7;
+    private double recover = 0.1;
     private double die = 0.2;
-    private double sick = 0.5;
-    private double dieAnimal = 0.5;
+    private double sick = 0.2;
+    private double dieAnimal = 0.1;
     private static int step = 0;
-    private static final double ACCIDENT_RATE = 0;
-    private static final double SICK_ANIMAL_RATE = 0.2;
-    private static final int NOMBER_HUMAN = 8880;
+    private static final double ACCIDENT_RATE = 0.0001;
+    private static final double SICK_ANIMAL_RATE = 0.4;
+    private static final int NOMBER_HUMAN = 3288;
     private static final int NOMBER_CHICKEN = 40;
-    private static final int NOMBER_PIG = 60;
+    private static final int NOMBER_PIG = 20;
     private Sandbox sandbox = new Sandbox();
     private final Map<State, Map<Event, Supplier<State>>> dict = new HashMap<>();
     private List<SimulatorView> views = new ArrayList<>();
-
+    private static int sicker;
+    private static int healther;
+    private static int recovered;
+    private static int contagious;
+    private static int dead;
     public Simulator(SimulatorView... views) {
+        sicker = 0;
+        healther = 0;
+        recovered = 0;
+        contagious = 0;
+        dead = 0;
         buildDict();
         setHuman(NOMBER_HUMAN);
         setChicken(NOMBER_CHICKEN);
@@ -51,6 +60,22 @@ public class Simulator {
 
     Virus H1N1 = new Virus("H1N1", 0.2, 0.4, 0.5, 0.5, 0.2);
     Virus HHHH = new Virus("HHHH", 0.5, 0.5, 0.5, 0.5, 0.5);
+
+    public static int getSicker() {
+        return sicker;
+    }
+    public static int getHealther() {
+        return healther;
+    }
+    public static int getRecovered() {
+        return recovered;
+    }
+    public static int getContagious() {
+        return contagious;
+    }
+    public static int getDead() {
+        return dead;
+    }
 
     private void setProperty(Virus virus) {
 //        infect = virus.getInfectrate();
@@ -87,10 +112,49 @@ public class Simulator {
                     }
                 }
             }
+        countState();
         updateViews();
         return step;
     }
 
+    void countState() {
+        sicker = 0;
+        healther = 0;
+        recovered = 0;
+        contagious = 0;
+        for(int x = 0; x < SIZE; x++)
+            for(int y = 0; y < SIZE; y++) {
+                Location location = sandbox.getLocation(x, y);
+                if(location.isVide()) continue;
+                Vivant vivant = location.getVivant();
+              switch (vivant.getState()) {
+              case HEALTHY:
+                  healther++;
+                  break;
+              case INFECTED:
+                  healther++;
+                  break;
+              case CONTAGIOUS_AND_SICK:
+                  sicker++;
+                  contagious++;
+                  break;
+              case CONTAGIOUS_NOT_SICK:
+                  contagious++;
+                  break;
+              case CONTAGIOUS:
+                  contagious++;
+                  break;
+              case RECOVERED:
+                  recovered++;
+                  break;
+              case DEAD:
+                  dead++;
+                  break;
+              default:
+                  break;
+              }
+            }
+    }
     void run(int days) {
         int dead = 0;
 

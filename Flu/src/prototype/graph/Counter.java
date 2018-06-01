@@ -1,14 +1,12 @@
 package prototype.graph;
 
-import java.awt.Color;
-
 /**
  * Provide a counter for a participant in the simulation.
  * This includes an identifying string and a count of how
  * many participants of this type currently exist within 
  * the simulation.
  * 
- * @author Michael Kölling and David J. Barnes
+ * @author Michael Klling and David J. Barnes
  * @version 2016.02.29
  */
 public class Counter {
