@@ -3,6 +3,7 @@ package prototype.graph;
 import java.util.HashMap;
 
 import prototype.core.Sandbox;
+import prototype.core.Simulator;
 import prototype.vivant.Vivant;
 
 /**
@@ -44,8 +45,13 @@ public class FieldStats {
             buffer.append(info.getName());
             buffer.append(": ");
             buffer.append(info.getCount());
-            buffer.append(' ');
+            buffer.append("\n");
         }
+        buffer.append("healther: " + Simulator.getHealther()+"\n");
+        buffer.append("sicker: " + Simulator.getSicker()+"\n");
+        buffer.append("contagious: " + Simulator.getContagious()+"\n");
+        buffer.append("recovered: " + Simulator.getRecovered()+"\n");
+        buffer.append("dead: " + Simulator.getDead()+"\n");
         return buffer.toString();
     }
 

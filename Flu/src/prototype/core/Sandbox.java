@@ -12,7 +12,7 @@ import static prototype.affair.State.*;
  * @email shenyuan.huang@etu.unice.fr
  */
 public class Sandbox {
-    public static final int SIZE = 100;
+    public static final int SIZE = 120;
     final Location[][] locations = new Location[SIZE][SIZE];
     private List<Location> videSpace = new ArrayList<>();
     private Random rand = new Random();

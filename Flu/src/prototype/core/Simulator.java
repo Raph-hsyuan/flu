@@ -26,31 +26,26 @@ import prototype.virus.Virus;
  * @email shenyuan.huang@etu.unice.fr
  */
 public class Simulator {
-    private double infect = 0.7;
-    private double recover = 0.1;
-    private double die = 0.2;
-    private double sick = 0.2;
+    private double infect = 0.02;
+    private double recover = 0.01;
+    private double die = 0.6;
+    private double sick = 0.6;
     private double dieAnimal = 0.1;
     private static int step = 0;
-    private static final double ACCIDENT_RATE = 0.0001;
+    private static final double ACCIDENT_RATE = 0.000001;
     private static final double SICK_ANIMAL_RATE = 0.4;
-    private static final int NOMBER_HUMAN = 3288;
+    private static final int NOMBER_HUMAN = 10288;
     private static final int NOMBER_CHICKEN = 40;
     private static final int NOMBER_PIG = 20;
     private Sandbox sandbox = new Sandbox();
     private final Map<State, Map<Event, Supplier<State>>> dict = new HashMap<>();
     private List<SimulatorView> views = new ArrayList<>();
-    private static int sicker;
-    private static int healther;
-    private static int recovered;
-    private static int contagious;
-    private static int dead;
+    private static int sicker = 0;
+    private static int healther = 0;
+    private static int recovered = 0;
+    private static int contagious = 0;
+    private static int dead = 0;
     public Simulator(SimulatorView... views) {
-        sicker = 0;
-        healther = 0;
-        recovered = 0;
-        contagious = 0;
-        dead = 0;
         buildDict();
         setHuman(NOMBER_HUMAN);
         setChicken(NOMBER_CHICKEN);
@@ -141,6 +136,9 @@ public class Simulator {
               case CONTAGIOUS_NOT_SICK:
                   contagious++;
                   break;
+              case RECOVERING:
+                  contagious++;
+                  break;
               case CONTAGIOUS:
                   contagious++;
                   break;
@@ -156,72 +154,6 @@ public class Simulator {
             }
     }
     void run(int days) {
-        int dead = 0;
-
-//            sandbox.removeDead();
-//            move();
-//            int sicker = 0;
-//            int healther = 0;
-//            int recovered = 0;
-//            int contagious = 0;
-//            for (int x = 0; x < SIZE; x++)
-//                for (int y = 0; y < SIZE; y++) {
-//                    Location location = sandbox.getLocation(x, y);
-//                    Vivant vivant = location.getVivant();
-//                    if (!location.isVide()) {
-//                        if (vivant.toString().equals("H")) {
-//                            if (vivant.getState().equals(DEAD)) {
-//                                location.removeVivant();
-//                                continue;
-//                            }
-//                            Event event = dectEvent(location);
-//                            State state1 = vivant.getState();
-//                            if (state1.equals(CONTAGIOUS) || state1.equals(CONTAGIOUS_AND_SICK)
-//                                    || state1.equals(CONTAGIOUS_NOT_SICK))
-//                                setProperty(vivant.getVirus());
-//                            State state2 = dict.get(state1).get(event).get();
-//                            vivant.setState(state2);
-//                            switch (vivant.getState()) {
-//                            case HEALTHY:
-//                                healther++;
-//                                break;
-//                            case INFECTED:
-//                                healther++;
-//                                break;
-//                            case CONTAGIOUS_AND_SICK:
-//                                sicker++;
-//                                contagious++;
-//                                break;
-//                            case CONTAGIOUS_NOT_SICK:
-//                                contagious++;
-//                                break;
-//                            case CONTAGIOUS:
-//                                contagious++;
-//                                break;
-//                            case RECOVERED:
-//                                recovered++;
-//                                break;
-//                            case DEAD:
-//                                dead++;
-//                                break;
-//                            default:
-//                                break;
-//                            }
-//                        } else {
-//                            if (vivant.getState().equals(CONTAGIOUS) && Math.random() < dieAnimal)
-//                                vivant.setState(DEAD);
-//
-//                        }
-//                    }
-//                }
-//            System.out.println("\n*******************");
-//            System.out.println("\nDAY: " + i);
-//            System.out.println(this);
-//            System.out.println("REPORT:\nsick : " + sicker);
-//            System.out.println("healthy : " + healther);
-//            System.out.println("contagious : " + contagious);
-//            System.out.println("recovered : " + recovered);
-//            System.out.println("dead : " + dead);
         for (int i = 0; i < 100; i++) {
             simulateOneStep();
             System.out.println(this);
@@ -257,6 +189,9 @@ public class Simulator {
                         centre.setVirus(vivant.getVirus());
                         return CONTACT;
                     case CONTAGIOUS_NOT_SICK:
+                        centre.setVirus(vivant.getVirus());
+                        return CONTACT;
+                    case RECOVERING:
                         centre.setVirus(vivant.getVirus());
                         return CONTACT;
                     default:

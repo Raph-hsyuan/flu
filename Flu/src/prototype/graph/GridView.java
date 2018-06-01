@@ -1,16 +1,24 @@
 package prototype.graph;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Dimension2D;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import prototype.core.Sandbox;
@@ -28,19 +36,21 @@ import static prototype.affair.State.*;
  * @version 2017.03.24
  */
 @SuppressWarnings("serial")
-public class GridView implements SimulatorView {
+public class GridView extends Application implements SimulatorView {
     private static GridView instance;
     private static final int LABEL_HEIGHT = 50;
-    // Colors used for empty locations.
     private static final Color EMPTY_COLOR = Color.WHITE;
     private final String STEP_PREFIX = "Day: ";
     private final String POPULATION_PREFIX = "Population: ";
-    private final String DETAIL_PREFIX = "Detail: ";
     private Label stepLabel;
     private Label populationLbl;
-    private Label detailLable;
     private FieldView fieldView;
-
+    
+    private Simulator simulator;
+    private List<SimulatorView> views = new ArrayList<>();
+    static private AnimationTimer timer;
+    static Slider speedSlider;
+    
     // A map for storing colors for participants in the simulation
     private final Map<Class<? extends Vivant>, Color> colors
             = new HashMap<Class<? extends Vivant>, Color>() {{
@@ -54,7 +64,7 @@ public class GridView implements SimulatorView {
     private int height;
     private BorderPane root;
     private int step = 0;
-
+    private int nothing = 0;
     public GridView() {
         this(Sandbox.SIZE, Sandbox.SIZE);
     }
@@ -68,8 +78,8 @@ public class GridView implements SimulatorView {
      *            The simulation's width.
      */
     public GridView(int height, int width) {
-        this.width = width+20;
-        this.height = height+20;
+        this.width = width+60;
+        this.height = height+15;
         stats = new FieldStats();
         fieldView = new FieldView(height, width);
         instance = this;
@@ -102,24 +112,15 @@ public class GridView implements SimulatorView {
         populationLbl.setAlignment(Pos.CENTER);
         populationLbl.setMinHeight(LABEL_HEIGHT);
         root.setBottom(populationLbl);
-        BorderPane.setAlignment(root.getTop(), Pos.BOTTOM_RIGHT);
-
-        detailLable = new Label(DETAIL_PREFIX);
-        detailLable.setAlignment(Pos.CENTER);
-        detailLable.setMinHeight(LABEL_HEIGHT);
-        root.setLeft(detailLable);
         BorderPane.setAlignment(root.getTop(), Pos.BOTTOM_CENTER);
-        
+
         root.setCenter(fieldView);
         stage.setScene(new Scene(root,
                 width * FieldView.GRID_VIEW_SCALING_FACTOR,
                 height * FieldView.GRID_VIEW_SCALING_FACTOR + 2 * LABEL_HEIGHT));
+        root.setRight(createContent());
         stage.show();
 
-    }
-
-    public void stop() {
-        System.out.println("Well, that was fun.");
     }
 
     /**
@@ -143,7 +144,7 @@ public class GridView implements SimulatorView {
             return Color.BLACK;
         if(vivant.getState().equals(RECOVERED))
             return Color.GREEN;
-        if(!vivant.getState().equals(HEALTHY))
+        if(!vivant.getState().equals(HEALTHY)&&!vivant.getState().equals(INFECTED))
             return Color.RED;
         return colors.get(vivant.getClass());
     }
@@ -160,14 +161,7 @@ public class GridView implements SimulatorView {
     @Override
     public void showStatus(int step, Sandbox field) {
         stepLabel.setText(STEP_PREFIX + step);
-        StringBuilder detail = new StringBuilder();
-        detail.append("\nhealther: " + Simulator.getHealther()+"\n");
-        detail.append("sicker: " + Simulator.getSicker()+"\n");
-        detail.append("contagious: " + Simulator.getContagious()+"\n");
-        detail.append("recovered: " + Simulator.getRecovered()+"\n");
-        detail.append("dead: " + Simulator.getDead()+"\n");
-        
-        detailLable.setText(DETAIL_PREFIX + detail);
+
         stats.reset();
         fieldView.preparePaint();
         for (int row = 0; row < Sandbox.SIZE; row++) {
@@ -249,5 +243,91 @@ public class GridView implements SimulatorView {
             g.setFill(color);
             g.fillRect(x * xScale, y * yScale, xScale - 1, yScale - 1);
         }
+    }
+    
+    /**
+     * Instantiates simulator view objects from simulator view class names.
+     * Bit of a hack to get around the checked exceptions.
+     */
+    @Override
+    public void init() {
+        getParameters().getUnnamed().forEach(name
+            -> {try {
+                    views.add((SimulatorView) Class.forName(name).newInstance());
+                } catch (Exception e) {
+                    System.out.println("WHOOPSIE! Careful with that cast, Eugene");
+                }
+            }
+        );
+    }
+    
+    /**
+     * Sets up and runs animation timer.
+     * Calls one simulation step at each time event.
+     */
+    @Override
+    public void start(Stage primaryStage) {
+        views.forEach(v -> v.start());
+        simulator = new Simulator(views.toArray(new SimulatorView[0]));
+        if (timer == null) {
+            timer = new AnimationTimer() {
+                @Override
+                public void handle(long now) {
+                    // trying to slow down the display
+                    try {
+                        Thread.sleep(getSpeed());
+                    } catch (InterruptedException e) {}
+
+                    step = simulator.simulateOneStep();
+                    if (!simulator.isViable(step)) {
+                        stop();
+                        System.out.println("Animation stopped");
+                    }
+                    if(simulator.getContagious() + simulator.getSicker() == 0)
+                        nothing ++;
+                    if(nothing > 40)
+                        stop();
+                }
+                
+            };
+            setTimer(timer);
+        }
+        timer.start();
+    }
+    
+    private Parent createContent() {
+        VBox root = new VBox();
+        root.setAlignment(Pos.CENTER);
+        Button pauseBtn = new Button("Pause");
+        pauseBtn.setOnAction(evt -> timer.stop());
+        Button continueBtn = new Button("Carry on");
+        continueBtn.setOnAction(evt -> timer.start());
+        HBox speedBox = new HBox();
+        speedBox.setAlignment(Pos.CENTER);
+        speedSlider = new Slider(0, 1, 0.9);  // in secs
+        speedSlider.setShowTickMarks(true);
+        speedSlider.setShowTickLabels(true);
+        speedSlider.setMajorTickUnit(0.25f);
+        speedSlider.setBlockIncrement(0.1f);
+        speedBox.getChildren().addAll(new Label("Slow"), speedSlider, new Label("Fast"));
+        Button quitBtn = new Button("Quit");
+        quitBtn.setOnAction(evt -> Platform.exit());
+        root.getChildren().addAll(pauseBtn, continueBtn, quitBtn, speedBox);
+        return root;
+    }
+
+    void setTimer(AnimationTimer timers) {
+        timer = timers;
+    }
+
+    /**
+     * Converts speed reading from secs to msecs.
+     */
+    long getSpeed() {
+        return 1000 - (long) (1000 * speedSlider.getValue());
+    }
+    
+    public static void launch() {
+        Application.launch("prototype.graph.GridView");
     }
 }
