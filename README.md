@@ -1,9 +1,10 @@
 # oop-mundus-alfa
-Just realize a part of visual version, but there are still a lot of works todo
-  there are a lot of unless, repeat and awful codes
-  the events of flu can't work exactly the same as our expect
-  different virus
-  ......
-  ...
-  .
-  
+## Lastweek:
+### 1. Add display details
+1. number of health people
+2. number of death
+3. number of contagious
+4. number of sick ...
+
+### 2. Stop the Simulator when reach a stable state
+### 3. Put controller and grap together in one window by creating new thread
