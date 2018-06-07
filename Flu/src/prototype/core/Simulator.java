@@ -109,7 +109,6 @@ public class Simulator {
                 }
             }
         countState();
-        updateViews();
         return step;
     }
 
@@ -270,12 +269,10 @@ public class Simulator {
     public boolean isViable() {
         if (getContagious() + getSicker() == 0)
             nothing++;
-        if (nothing > 40)
-            return false;
-        return true;
+        return nothing > 40 ? false:true;
     }
     
-    private void updateViews() {
+    public void updateViews() {
         views.forEach(v -> v.showStatus(step, this.sandbox));
     }
 

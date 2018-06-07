@@ -50,7 +50,8 @@ public class GridView extends Application implements SimulatorView {
     private List<SimulatorView> views = new ArrayList<>();
     static private AnimationTimer timer;
     static Slider speedSlider;
-
+    Thread threadOneStep = new Thread();
+    private boolean isFirstTime = true;
     // A map for storing colors for participants in the simulation
     private final Map<Class<? extends Vivant>, Color> colors = new HashMap<Class<? extends Vivant>, Color>() {
         {
@@ -64,7 +65,6 @@ public class GridView extends Application implements SimulatorView {
     private int width;
     private int height;
     private BorderPane root;
-    private int step = 0;
 
     public GridView() {
         this(Sandbox.SIZE, Sandbox.SIZE);
@@ -255,7 +255,7 @@ public class GridView extends Application implements SimulatorView {
             }
         });
     }
-
+    
     /**
      * Sets up and runs animation timer. Calls one simulation step at each time
      * event.
@@ -269,12 +269,22 @@ public class GridView extends Application implements SimulatorView {
                 @Override
                 public void handle(long now) {
                     // trying to slow down the display
-                    try {
-                        Thread.sleep(getSpeed());
-                    } catch (InterruptedException e) {
+                    if( isFirstTime || (!threadOneStep.isAlive())) {
+                        threadOneStep = new Thread() {
+                            @Override
+                            public void run() {
+                                try {
+                                    Thread.sleep(getSpeed());
+                                } catch (InterruptedException e) {}
+                                simulator.simulateOneStep();
+                                Platform.runLater(() -> {
+                                simulator.updateViews();
+                                });
+                            }
+                        };
+                        isFirstTime = false;
+                        threadOneStep.start();
                     }
-
-                    step = simulator.simulateOneStep();
                     if (!simulator.isViable()) {
                         stop();
                         System.out.println("Animation stopped");
