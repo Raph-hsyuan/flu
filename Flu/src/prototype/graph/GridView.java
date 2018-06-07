@@ -45,26 +45,27 @@ public class GridView extends Application implements SimulatorView {
     private Label stepLabel;
     private Label populationLbl;
     private FieldView fieldView;
-    
+
     private Simulator simulator;
     private List<SimulatorView> views = new ArrayList<>();
     static private AnimationTimer timer;
     static Slider speedSlider;
-    
+
     // A map for storing colors for participants in the simulation
-    private final Map<Class<? extends Vivant>, Color> colors
-            = new HashMap<Class<? extends Vivant>, Color>() {{
-                put(Human.class, Color.ORANGE);
-                put(Pig.class, Color.PINK);
-                put(Chicken.class, Color.YELLOW);
-            }};
+    private final Map<Class<? extends Vivant>, Color> colors = new HashMap<Class<? extends Vivant>, Color>() {
+        {
+            put(Human.class, Color.ORANGE);
+            put(Pig.class, Color.PINK);
+            put(Chicken.class, Color.YELLOW);
+        }
+    };
     // A statistics object computing and storing simulation information
     private FieldStats stats;
     private int width;
     private int height;
     private BorderPane root;
     private int step = 0;
-    private int nothing = 0;
+
     public GridView() {
         this(Sandbox.SIZE, Sandbox.SIZE);
     }
@@ -78,8 +79,8 @@ public class GridView extends Application implements SimulatorView {
      *            The simulation's width.
      */
     public GridView(int height, int width) {
-        this.width = width+60;
-        this.height = height+15;
+        this.width = width + 60;
+        this.height = height + 15;
         stats = new FieldStats();
         fieldView = new FieldView(height, width);
         instance = this;
@@ -115,8 +116,7 @@ public class GridView extends Application implements SimulatorView {
         BorderPane.setAlignment(root.getTop(), Pos.BOTTOM_CENTER);
 
         root.setCenter(fieldView);
-        stage.setScene(new Scene(root,
-                width * FieldView.GRID_VIEW_SCALING_FACTOR,
+        stage.setScene(new Scene(root, width * FieldView.GRID_VIEW_SCALING_FACTOR,
                 height * FieldView.GRID_VIEW_SCALING_FACTOR + 2 * LABEL_HEIGHT));
         root.setRight(createContent());
         stage.show();
@@ -140,18 +140,18 @@ public class GridView extends Application implements SimulatorView {
      * @return The color to be used for a given class of animal.
      */
     private Color getColor(Vivant vivant) {
-        if(vivant.getState().equals(DEAD))
+        if (vivant.getState().equals(DEAD))
             return Color.BLACK;
-        if(vivant.getState().equals(RECOVERED))
+        if (vivant.getState().equals(RECOVERED))
             return Color.GREEN;
-        if(!vivant.getState().equals(HEALTHY)&&!vivant.getState().equals(INFECTED))
+        if (!vivant.getState().equals(HEALTHY) && !vivant.getState().equals(INFECTED))
             return Color.RED;
         return colors.get(vivant.getClass());
     }
 
     /**
-     * Show the current status of the field.
-     * Incidentally draws protagonists in place.
+     * Show the current status of the field. Incidentally draws protagonists in
+     * place.
      * 
      * @param step
      *            Which iteration step it is.
@@ -170,8 +170,7 @@ public class GridView extends Application implements SimulatorView {
                 if (!isVide) {
                     Vivant animal = field.getLocation(row, col).getVivant();
                     stats.incrementCount(animal.getClass());
-                    fieldView.drawMark(col,
-                            row, getColor(animal));
+                    fieldView.drawMark(col, row, getColor(animal));
                 } else {
                     fieldView.drawMark(col, row, EMPTY_COLOR);
                 }
@@ -198,12 +197,11 @@ public class GridView extends Application implements SimulatorView {
         // always a pleasure
     }
 
-
     /**
-     * Provide a graphical view of a rectangular field. This is a nested class
-     * (a class defined inside a class) which defines a custom component for the
-     * user interface. This component displays the field. This is rather
-     * advanced GUI stuff - you can ignore this for your project if you like.
+     * Provide a graphical view of a rectangular field. This is a nested class (a
+     * class defined inside a class) which defines a custom component for the user
+     * interface. This component displays the field. This is rather advanced GUI
+     * stuff - you can ignore this for your project if you like.
      */
     private class FieldView extends Canvas {
         private static final int GRID_VIEW_SCALING_FACTOR = 6;
@@ -217,18 +215,16 @@ public class GridView extends Application implements SimulatorView {
          * Create a new FieldView component.
          */
         public FieldView(int height, int width) {
-            super(width * GRID_VIEW_SCALING_FACTOR,
-                    height * GRID_VIEW_SCALING_FACTOR);
+            super(width * GRID_VIEW_SCALING_FACTOR, height * GRID_VIEW_SCALING_FACTOR);
             gridHeight = height;
             gridWidth = width;
-            size = new Dimension2D(width * GRID_VIEW_SCALING_FACTOR,
-                    height * GRID_VIEW_SCALING_FACTOR);
+            size = new Dimension2D(width * GRID_VIEW_SCALING_FACTOR, height * GRID_VIEW_SCALING_FACTOR);
             g = getGraphicsContext2D();
         }
 
         /**
-         * Prepare for a new round of painting. Since the component may be
-         * resized, compute the scaling factor again.
+         * Prepare for a new round of painting. Since the component may be resized,
+         * compute the scaling factor again.
          */
         public void preparePaint() {
             g.clearRect(0, 0, size.getWidth(), size.getHeight());
@@ -244,26 +240,25 @@ public class GridView extends Application implements SimulatorView {
             g.fillRect(x * xScale, y * yScale, xScale - 1, yScale - 1);
         }
     }
-    
+
     /**
-     * Instantiates simulator view objects from simulator view class names.
-     * Bit of a hack to get around the checked exceptions.
+     * Instantiates simulator view objects from simulator view class names. Bit of a
+     * hack to get around the checked exceptions.
      */
     @Override
     public void init() {
-        getParameters().getUnnamed().forEach(name
-            -> {try {
-                    views.add((SimulatorView) Class.forName(name).newInstance());
-                } catch (Exception e) {
-                    System.out.println("WHOOPSIE! Careful with that cast, Eugene");
-                }
+        getParameters().getUnnamed().forEach(name -> {
+            try {
+                views.add((SimulatorView) Class.forName(name).newInstance());
+            } catch (Exception e) {
+                System.out.println("WHOOPSIE! Careful with that cast, Eugene");
             }
-        );
+        });
     }
-    
+
     /**
-     * Sets up and runs animation timer.
-     * Calls one simulation step at each time event.
+     * Sets up and runs animation timer. Calls one simulation step at each time
+     * event.
      */
     @Override
     public void start(Stage primaryStage) {
@@ -276,25 +271,23 @@ public class GridView extends Application implements SimulatorView {
                     // trying to slow down the display
                     try {
                         Thread.sleep(getSpeed());
-                    } catch (InterruptedException e) {}
+                    } catch (InterruptedException e) {
+                    }
 
                     step = simulator.simulateOneStep();
-                    if (!simulator.isViable(step)) {
+                    if (!simulator.isViable()) {
                         stop();
                         System.out.println("Animation stopped");
                     }
-                    if(simulator.getContagious() + simulator.getSicker() == 0)
-                        nothing ++;
-                    if(nothing > 40)
-                        stop();
+
                 }
-                
+
             };
             setTimer(timer);
         }
         timer.start();
     }
-    
+
     private Parent createContent() {
         VBox root = new VBox();
         root.setAlignment(Pos.CENTER);
@@ -304,7 +297,7 @@ public class GridView extends Application implements SimulatorView {
         continueBtn.setOnAction(evt -> timer.start());
         HBox speedBox = new HBox();
         speedBox.setAlignment(Pos.CENTER);
-        speedSlider = new Slider(0, 1, 0.9);  // in secs
+        speedSlider = new Slider(0, 1, 0.9); // in secs
         speedSlider.setShowTickMarks(true);
         speedSlider.setShowTickLabels(true);
         speedSlider.setMajorTickUnit(0.25f);
@@ -326,7 +319,7 @@ public class GridView extends Application implements SimulatorView {
     long getSpeed() {
         return 1000 - (long) (1000 * speedSlider.getValue());
     }
-    
+
     public static void launch() {
         Application.launch("prototype.graph.GridView");
     }

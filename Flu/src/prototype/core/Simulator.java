@@ -45,6 +45,7 @@ public class Simulator {
     private static int recovered = 0;
     private static int contagious = 0;
     private static int dead = 0;
+    private int nothing = 0;
     public Simulator(SimulatorView... views) {
         buildDict();
         setHuman(NOMBER_HUMAN);
@@ -266,8 +267,12 @@ public class Simulator {
      * @param step2
      * @return
      */
-    public boolean isViable(int step2) {
-        return step2<=10000;
+    public boolean isViable() {
+        if (getContagious() + getSicker() == 0)
+            nothing++;
+        if (nothing > 40)
+            return false;
+        return true;
     }
     
     private void updateViews() {
