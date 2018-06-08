@@ -5,7 +5,8 @@ import java.util.HashMap;
 import prototype.core.Sandbox;
 import prototype.core.Simulator;
 import prototype.vivant.Vivant;
-
+import static prototype.affair.State.*;
+import prototype.affair.State;
 /**
  * This class collects and provides some statistical data on the state of a
  * field. It is flexible: it will create and maintain a counter for any class of
@@ -35,24 +36,34 @@ public class FieldStats {
      * 
      * @return A string describing what is in the field.
      */
-    public String getPopulationDetails(Sandbox field) {
-        StringBuffer buffer = new StringBuffer();
+    public String getPopulationDetails(Sandbox field, Vivant vivant) {
+        StringBuilder builder = new StringBuilder();
         if (!countsValid) {
             generateCounts(field);
         }
-        for (Class<? extends Vivant> key : counters.keySet()) {
-            Counter info = counters.get(key);
-            buffer.append(info.getName());
-            buffer.append(": ");
-            buffer.append(info.getCount());
-            buffer.append("\n");
+
+        Counter info = counters.get(vivant.getClass());
+        builder.append(info.getName());
+        builder.append(": ");
+        builder.append(info.getCount());
+        return builder.toString();
+    }
+
+    public String getStatDetails(State state) {
+        switch (state) {
+        case CONTAGIOUS:
+            return "Contagious : " + Simulator.getNumber(CONTAGIOUS);
+        case HEALTHY:
+            return "Healthy : " + Simulator.getNumber(HEALTHY);
+        case DEAD:
+            return "Dead : " + Simulator.getNumber(DEAD);
+        case RECOVERED:
+            return "Recovered : " + Simulator.getNumber(RECOVERED);
+        case SICK:
+            return "Sick : " + Simulator.getNumber(SICK);
+        default:
+            return "";
         }
-        buffer.append("healther: " + Simulator.getHealther()+"\n");
-        buffer.append("sicker: " + Simulator.getSicker()+"\n");
-        buffer.append("contagious: " + Simulator.getContagious()+"\n");
-        buffer.append("recovered: " + Simulator.getRecovered()+"\n");
-        buffer.append("dead: " + Simulator.getDead()+"\n");
-        return buffer.toString();
     }
 
     /**
@@ -105,8 +116,8 @@ public class FieldStats {
     }
 
     /**
-     * Determine whether the simulation is still viable. I.e., should it
-     * continue to run.
+     * Determine whether the simulation is still viable. I.e., should it continue to
+     * run.
      * 
      * @return true If there is more than one species alive.
      */
@@ -126,9 +137,9 @@ public class FieldStats {
     }
 
     /**
-     * Generate counts of the number of foxes and rabbits. These are not kept up
-     * to date as foxes and rabbits are placed in the field, but only when a
-     * request is made for the information.
+     * Generate counts of the number of foxes and rabbits. These are not kept up to
+     * date as foxes and rabbits are placed in the field, but only when a request is
+     * made for the information.
      * 
      * @param field
      *            The field to generate the stats for.

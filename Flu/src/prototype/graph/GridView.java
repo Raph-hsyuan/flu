@@ -14,12 +14,16 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.effect.BoxBlur;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import prototype.core.Sandbox;
 import prototype.core.Simulator;
@@ -43,14 +47,13 @@ public class GridView extends Application implements SimulatorView {
     private final String STEP_PREFIX = "Day: ";
     private final String POPULATION_PREFIX = "Population: ";
     private Label stepLabel;
-    private Label populationLbl;
+    private TextFlow population = new TextFlow();
     private FieldView fieldView;
-
     private Simulator simulator;
     private List<SimulatorView> views = new ArrayList<>();
     static private AnimationTimer timer;
     static Slider speedSlider;
-    Thread threadOneStep = new Thread();
+    private Thread threadOneStep = new Thread();
     private boolean isFirstTime = true;
     // A map for storing colors for participants in the simulation
     private final Map<Class<? extends Vivant>, Color> colors = new HashMap<Class<? extends Vivant>, Color>() {
@@ -80,7 +83,7 @@ public class GridView extends Application implements SimulatorView {
      */
     public GridView(int height, int width) {
         this.width = width + 60;
-        this.height = height + 15;
+        this.height = height + 20;
         stats = new FieldStats();
         fieldView = new FieldView(height, width);
         instance = this;
@@ -98,29 +101,23 @@ public class GridView extends Application implements SimulatorView {
      */
     @Override
     public void start() {
-
         Stage stage = new Stage();
         stage.setTitle("Flu");
         root = new BorderPane();
-
         stepLabel = new Label(STEP_PREFIX);
         stepLabel.setAlignment(Pos.CENTER);
         stepLabel.setMinHeight(LABEL_HEIGHT);
         root.setTop(stepLabel);
         BorderPane.setAlignment(root.getTop(), Pos.BOTTOM_CENTER);
 
-        populationLbl = new Label(POPULATION_PREFIX);
-        populationLbl.setAlignment(Pos.CENTER);
-        populationLbl.setMinHeight(LABEL_HEIGHT);
-        root.setBottom(populationLbl);
-        BorderPane.setAlignment(root.getTop(), Pos.BOTTOM_CENTER);
+        root.setBottom(population);
 
         root.setCenter(fieldView);
         stage.setScene(new Scene(root, width * FieldView.GRID_VIEW_SCALING_FACTOR,
                 height * FieldView.GRID_VIEW_SCALING_FACTOR + 2 * LABEL_HEIGHT));
         root.setRight(createContent());
-        stage.show();
 
+        stage.show();
     }
 
     /**
@@ -161,7 +158,7 @@ public class GridView extends Application implements SimulatorView {
     @Override
     public void showStatus(int step, Sandbox field) {
         stepLabel.setText(STEP_PREFIX + step);
-
+        stepLabel.setFont(Font.font(30));
         stats.reset();
         fieldView.preparePaint();
         for (int row = 0; row < Sandbox.SIZE; row++) {
@@ -176,8 +173,52 @@ public class GridView extends Application implements SimulatorView {
                 }
             }
         }
+
+        buildStatistic(field);
+        buildStateStatistic(field);
+    }
+
+    void buildStateStatistic(Sandbox field) {
+        Text cC = new Text("\n██");
+        cC.setFill(Color.RED);
+        Text c = new Text("Contagious: " + simulator.getNumber(CONTAGIOUS));
+
+        Text hC = new Text("\n██");
+        hC.setFill(Color.ORANGE);
+        Text h = new Text("Healthy: " + simulator.getNumber(HEALTHY));
+
+        Text dC = new Text("\n██");
+        dC.setFill(Color.BLACK);
+        Text d = new Text("Dead: " + simulator.getNumber(DEAD));
+
+        Text rC = new Text("\n██");
+        rC.setFill(Color.GREEN);
+        Text r = new Text("Recovered: " + simulator.getNumber(RECOVERED));
+
+        Text sC = new Text("\n██");
+        sC.setFill(Color.RED);
+        Text s = new Text("Sick: " + simulator.getNumber(SICK));
+        population.getChildren().addAll(cC,c,hC,h,dC,d,sC,s);
+
+    }
+
+    void buildStatistic(Sandbox field) {
+        population.getChildren().clear();
         stats.countFinished();
-        populationLbl.setText(stats.getPopulationDetails(field));
+
+        Text humanC = new Text("\n██");
+        humanC.setFill(Color.ORANGE);
+        Text human = new Text(stats.getPopulationDetails(field, new Human()));
+
+        Text pigC = new Text("\n██");
+        pigC.setFill(Color.PINK);
+        Text pig = new Text(stats.getPopulationDetails(field, new Pig()));
+
+        Text chickenC = new Text("\n██");
+        chickenC.setFill(Color.YELLOW);
+        Text chicken = new Text(stats.getPopulationDetails(field, new Chicken()));
+
+        population.getChildren().addAll(humanC, human, pigC, pig, chickenC, chicken);
     }
 
     /**
@@ -255,7 +296,7 @@ public class GridView extends Application implements SimulatorView {
             }
         });
     }
-    
+
     /**
      * Sets up and runs animation timer. Calls one simulation step at each time
      * event.
@@ -269,16 +310,17 @@ public class GridView extends Application implements SimulatorView {
                 @Override
                 public void handle(long now) {
                     // trying to slow down the display
-                    if( isFirstTime || (!threadOneStep.isAlive())) {
+                    if (isFirstTime || (!threadOneStep.isAlive())) {
                         threadOneStep = new Thread() {
                             @Override
                             public void run() {
                                 try {
                                     Thread.sleep(getSpeed());
-                                } catch (InterruptedException e) {}
+                                } catch (InterruptedException e) {
+                                }
                                 simulator.simulateOneStep();
                                 Platform.runLater(() -> {
-                                simulator.updateViews();
+                                    simulator.updateViews();
                                 });
                             }
                         };

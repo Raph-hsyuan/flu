@@ -26,22 +26,22 @@ import prototype.virus.Virus;
  * @email shenyuan.huang@etu.unice.fr
  */
 public class Simulator {
-    private double infect = 0.02;
-    private double recover = 0.01;
-    private double die = 0.6;
-    private double sick = 0.6;
-    private double dieAnimal = 0.1;
+    private double infectRate = 0.02;
+    private double recoverRate = 0.01;
+    private double dieRate = 0.6;
+    private double sickRate = 0.6;
+    private double dieAnimalRate = 0.1;
     private static int step = 0;
     private static final double ACCIDENT_RATE = 0.000001;
     private static final double SICK_ANIMAL_RATE = 0.4;
-    private static final int NOMBER_HUMAN = 10288;
+    private static final int NOMBER_HUMAN = 13288;
     private static final int NOMBER_CHICKEN = 40;
     private static final int NOMBER_PIG = 20;
     private Sandbox sandbox = new Sandbox();
     private final Map<State, Map<Event, Supplier<State>>> dict = new HashMap<>();
     private List<SimulatorView> views = new ArrayList<>();
-    private static int sicker = 0;
-    private static int healther = 0;
+    private static int sick = 0;
+    private static int healthy = 0;
     private static int recovered = 0;
     private static int contagious = 0;
     private static int dead = 0;
@@ -56,21 +56,16 @@ public class Simulator {
 
     Virus H1N1 = new Virus("H1N1", 0.2, 0.4, 0.5, 0.5, 0.2);
     Virus HHHH = new Virus("HHHH", 0.5, 0.5, 0.5, 0.5, 0.5);
-
-    public static int getSicker() {
-        return sicker;
-    }
-    public static int getHealther() {
-        return healther;
-    }
-    public static int getRecovered() {
-        return recovered;
-    }
-    public static int getContagious() {
-        return contagious;
-    }
-    public static int getDead() {
-        return dead;
+    
+    public static int getNumber(State state) {
+        switch(state) {
+        case CONTAGIOUS : return contagious;
+        case HEALTHY : return healthy;
+        case DEAD : return dead;
+        case RECOVERED : return recovered;
+        case SICK : return sick;
+        default : return 0;
+        }
     }
 
     private void setProperty(Virus virus) {
@@ -97,13 +92,13 @@ public class Simulator {
                         }
                         Event event = dectEvent(location);
                         State state1 = vivant.getState();
-                        if (state1.equals(CONTAGIOUS) || state1.equals(CONTAGIOUS_AND_SICK)
-                                || state1.equals(CONTAGIOUS_NOT_SICK))
+                        if (state1.equals(CONTAGIOUS) || state1.equals(SICK)
+                                || state1.equals(SICK))
                             setProperty(vivant.getVirus());
                         State state2 = dict.get(state1).get(event).get();
                         vivant.setState(state2);
                     } else {
-                        if (vivant.getState().equals(CONTAGIOUS) && Math.random() < dieAnimal)
+                        if (vivant.getState().equals(CONTAGIOUS) && Math.random() < dieAnimalRate)
                             vivant.setState(DEAD);
                     }
                 }
@@ -113,8 +108,8 @@ public class Simulator {
     }
 
     void countState() {
-        sicker = 0;
-        healther = 0;
+        sick = 0;
+        healthy = 0;
         recovered = 0;
         contagious = 0;
         for(int x = 0; x < SIZE; x++)
@@ -124,13 +119,13 @@ public class Simulator {
                 Vivant vivant = location.getVivant();
               switch (vivant.getState()) {
               case HEALTHY:
-                  healther++;
+                  healthy++;
                   break;
               case INFECTED:
-                  healther++;
+                  healthy++;
                   break;
-              case CONTAGIOUS_AND_SICK:
-                  sicker++;
+              case SICK:
+                  sick++;
                   contagious++;
                   break;
               case CONTAGIOUS_NOT_SICK:
@@ -167,7 +162,7 @@ public class Simulator {
             return CONTAGIOUS_TIME;
         if (centre.getState().equals(CONTAGIOUS_NOT_SICK))
             return CONTAGIOUS_TIME;
-        if (centre.getState().equals(CONTAGIOUS_AND_SICK))
+        if (centre.getState().equals(SICK))
             return CONTAGIOUS_TIME;
         if (centre.getState().equals(RECOVERING))
             return RECOVERING_TIME;
@@ -185,7 +180,7 @@ public class Simulator {
                     case CONTAGIOUS:
                         centre.setVirus(vivant.getVirus());
                         return CONTACT;
-                    case CONTAGIOUS_AND_SICK:
+                    case SICK:
                         centre.setVirus(vivant.getVirus());
                         return CONTACT;
                     case CONTAGIOUS_NOT_SICK:
@@ -205,17 +200,17 @@ public class Simulator {
     }
 
     void buildDict() {
-        put(HEALTHY, CONTACT, () -> Math.random() < infect ?  INFECTED : HEALTHY);
-        put(INFECTED, INCUBATION_TIME, () -> Math.random() < sick ? CONTAGIOUS : INFECTED);
-        put(CONTAGIOUS, CONTAGIOUS_TIME, () -> Math.random() < sick ? CONTAGIOUS_AND_SICK : CONTAGIOUS_NOT_SICK);
-        put(CONTAGIOUS_NOT_SICK, CONTAGIOUS_TIME, () -> Math.random() < sick ? CONTAGIOUS_AND_SICK : RECOVERING);
-        put(RECOVERING, RECOVERING_TIME, () -> Math.random() < recover ? RECOVERED : RECOVERING);
-        put(CONTAGIOUS_AND_SICK, CONTAGIOUS_TIME, () -> Math.random() < die ? DEAD : RECOVERING);
+        put(HEALTHY, CONTACT, () -> Math.random() < infectRate ?  INFECTED : HEALTHY);
+        put(INFECTED, INCUBATION_TIME, () -> Math.random() < sickRate ? CONTAGIOUS : INFECTED);
+        put(CONTAGIOUS, CONTAGIOUS_TIME, () -> Math.random() < sickRate ? SICK : CONTAGIOUS_NOT_SICK);
+        put(CONTAGIOUS_NOT_SICK, CONTAGIOUS_TIME, () -> Math.random() < sickRate ? SICK : RECOVERING);
+        put(RECOVERING, RECOVERING_TIME, () -> Math.random() < recoverRate ? RECOVERED : RECOVERING);
+        put(SICK, CONTAGIOUS_TIME, () -> Math.random() < dieRate ? DEAD : RECOVERING);
         put(HEALTHY, NOTHING, () -> Math.random() > ACCIDENT_RATE ? HEALTHY : DEAD);
         put(INFECTED, NOTHING, () -> Math.random() > ACCIDENT_RATE ? HEALTHY : DEAD);
         put(CONTAGIOUS, NOTHING, () -> Math.random() > ACCIDENT_RATE ? HEALTHY : DEAD);
         put(CONTAGIOUS_NOT_SICK, NOTHING, () -> Math.random() > ACCIDENT_RATE ? CONTAGIOUS_NOT_SICK : DEAD);
-        put(CONTAGIOUS_AND_SICK, NOTHING, () -> Math.random() > ACCIDENT_RATE ? CONTAGIOUS_AND_SICK : DEAD);
+        put(SICK, NOTHING, () -> Math.random() > ACCIDENT_RATE ? SICK : DEAD);
         put(RECOVERED, NOTHING, () -> Math.random() > ACCIDENT_RATE ? RECOVERED : DEAD);
     }
 
@@ -267,7 +262,7 @@ public class Simulator {
      * @return
      */
     public boolean isViable() {
-        if (getContagious() + getSicker() == 0)
+        if (getNumber(CONTAGIOUS) + getNumber(SICK) == 0)
             nothing++;
         return nothing > 40 ? false:true;
     }
