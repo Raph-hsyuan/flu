@@ -14,7 +14,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
-import javafx.scene.effect.BoxBlur;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
@@ -45,7 +44,6 @@ public class GridView extends Application implements SimulatorView {
     private static final int LABEL_HEIGHT = 50;
     private static final Color EMPTY_COLOR = Color.WHITE;
     private final String STEP_PREFIX = "Day: ";
-    private final String POPULATION_PREFIX = "Population: ";
     private Label stepLabel;
     private TextFlow population = new TextFlow();
     private FieldView fieldView;
@@ -181,24 +179,24 @@ public class GridView extends Application implements SimulatorView {
     void buildStateStatistic(Sandbox field) {
         Text cC = new Text("\n██");
         cC.setFill(Color.RED);
-        Text c = new Text("Contagious: " + simulator.getNumber(CONTAGIOUS));
+        Text c = new Text("Contagious: " + Simulator.getNumber(CONTAGIOUS));
 
         Text hC = new Text("\n██");
         hC.setFill(Color.ORANGE);
-        Text h = new Text("Healthy: " + simulator.getNumber(HEALTHY));
+        Text h = new Text("Healthy: " + Simulator.getNumber(HEALTHY));
 
         Text dC = new Text("\n██");
         dC.setFill(Color.BLACK);
-        Text d = new Text("Dead: " + simulator.getNumber(DEAD));
+        Text d = new Text("Dead: " + Simulator.getNumber(DEAD));
 
         Text rC = new Text("\n██");
         rC.setFill(Color.GREEN);
-        Text r = new Text("Recovered: " + simulator.getNumber(RECOVERED));
+        Text r = new Text("Recovered: " + Simulator.getNumber(RECOVERED));
 
         Text sC = new Text("\n██");
         sC.setFill(Color.RED);
-        Text s = new Text("Sick: " + simulator.getNumber(SICK));
-        population.getChildren().addAll(cC,c,hC,h,dC,d,sC,s);
+        Text s = new Text("Sick: " + Simulator.getNumber(SICK));
+        population.getChildren().addAll(cC,c,hC,h,dC,d,sC,s,rC,r);
 
     }
 

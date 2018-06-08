@@ -46,6 +46,7 @@ public class Simulator {
     private static int contagious = 0;
     private static int dead = 0;
     private int nothing = 0;
+    
     public Simulator(SimulatorView... views) {
         buildDict();
         setHuman(NOMBER_HUMAN);
