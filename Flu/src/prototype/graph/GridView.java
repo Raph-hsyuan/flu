@@ -317,6 +317,7 @@ public class GridView extends Application implements SimulatorView {
                         threadOneStep = new Thread() {
                             @Override
                             public void run() {
+                                simulator.nothingCount();
                                 try {
                                     Thread.sleep(getSpeed());
                                 } catch (InterruptedException e) {
@@ -345,7 +346,7 @@ public class GridView extends Application implements SimulatorView {
     private void setVirus() {
         Virus virus = new Virus("UserVirus",infectRateSlider.getValue(),
                 recoverRateSlider.getValue()*0.3,
-                dieRateSlider.getValue(),
+                dieRateSlider.getValue()*0.05,
                 sickRateSlider.getValue(),
                 dieAnimalSlider.getValue());
         Simulator.setChickenVirus(virus);

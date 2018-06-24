@@ -33,7 +33,7 @@ public class Simulator {
     private double sickRate;
     private double dieAnimalRate;
     private static int step = 0;
-    private static final double ACCIDENT_RATE = 0.000001;
+    private static final double ACCIDENT_RATE = 0;
     private static final double SICK_ANIMAL_RATE = 0.4;
     private static final int NOMBER_HUMAN = 13288;
     private static final int NOMBER_CHICKEN = 40;
@@ -136,35 +136,36 @@ public class Simulator {
                 Location location = sandbox.getLocation(x, y);
                 if(location.isVide()) continue;
                 Vivant vivant = location.getVivant();
-              switch (vivant.getState()) {
-              case HEALTHY:
-                  healthy++;
-                  break;
-              case INFECTED:
-                  healthy++;
-                  break;
-              case SICK:
-                  sick++;
-                  contagious++;
-                  break;
-              case CONTAGIOUS_NOT_SICK:
-                  contagious++;
-                  break;
-              case RECOVERING:
-                  contagious++;
-                  break;
-              case CONTAGIOUS:
-                  contagious++;
-                  break;
-              case RECOVERED:
-                  recovered++;
-                  break;
-              case DEAD:
-                  dead++;
-                  break;
-              default:
-                  break;
-              }
+                if(vivant instanceof Human)
+                    switch (vivant.getState()) {
+                    case HEALTHY:
+                        healthy++;
+                        break;
+                    case INFECTED:
+                        healthy++;
+                        break;
+                    case SICK:
+                        sick++;
+                        contagious++;
+                        break;
+                    case CONTAGIOUS_NOT_SICK:
+                        contagious++;
+                        break;
+                    case RECOVERING:
+                        contagious++;
+                        break;
+                    case CONTAGIOUS:
+                        contagious++;
+                        break;
+                    case RECOVERED:
+                        recovered++;
+                        break;
+                    case DEAD:
+                        dead++;
+                        break;
+                    default:
+                        break;
+                    }
             }
     }
     void run(int days) {
@@ -220,13 +221,13 @@ public class Simulator {
 
     void buildDict() {
         put(HEALTHY, CONTACT, () -> Math.random() < infectRate ?  INFECTED : HEALTHY);
-        put(INFECTED, INCUBATION_TIME, () -> Math.random() < sickRate ? CONTAGIOUS : INFECTED);
+        put(INFECTED, INCUBATION_TIME, () -> Math.random() < infectRate ? CONTAGIOUS : INFECTED);
         put(CONTAGIOUS, CONTAGIOUS_TIME, () -> Math.random() < sickRate ? SICK : CONTAGIOUS_NOT_SICK);
-        put(CONTAGIOUS_NOT_SICK, CONTAGIOUS_TIME, () -> Math.random() > sickRate && Math.random() < recoverRate ? RECOVERING : SICK);
+        put(CONTAGIOUS_NOT_SICK, CONTAGIOUS_TIME, () -> Math.random() < sickRate ? SICK: Math.random() < recoverRate ? RECOVERING : CONTAGIOUS_NOT_SICK);
         put(RECOVERING, RECOVERING_TIME, () -> Math.random() < recoverRate ? RECOVERED : RECOVERING);
         put(SICK, CONTAGIOUS_TIME, () -> Math.random() < dieRate ? DEAD : Math.random() < recoverRate? RECOVERING : SICK);
-        put(HEALTHY, NOTHING, () -> Math.random() > ACCIDENT_RATE ? HEALTHY : DEAD);
-        put(RECOVERED, NOTHING, () -> Math.random() > ACCIDENT_RATE ? RECOVERED : DEAD);
+        put(HEALTHY, NOTHING, () -> Math.random() < ACCIDENT_RATE ? DEAD : HEALTHY);
+        put(RECOVERED, NOTHING, () -> Math.random() < ACCIDENT_RATE ? DEAD : RECOVERED);
     }
 
     void setHuman(int number) {
@@ -276,10 +277,13 @@ public class Simulator {
      * @param step2
      * @return
      */
-    public boolean isViable() {
+    
+    public void nothingCount() {
         if (getNumber(CONTAGIOUS) + getNumber(SICK) == 0)
             nothing++;
-        return nothing <= 40;
+    }
+    public boolean isViable() {
+        return nothing <= 50;
     }
     
     public void updateViews() {
