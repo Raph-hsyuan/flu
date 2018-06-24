@@ -222,14 +222,10 @@ public class Simulator {
         put(HEALTHY, CONTACT, () -> Math.random() < infectRate ?  INFECTED : HEALTHY);
         put(INFECTED, INCUBATION_TIME, () -> Math.random() < sickRate ? CONTAGIOUS : INFECTED);
         put(CONTAGIOUS, CONTAGIOUS_TIME, () -> Math.random() < sickRate ? SICK : CONTAGIOUS_NOT_SICK);
-        put(CONTAGIOUS_NOT_SICK, CONTAGIOUS_TIME, () -> Math.random() < sickRate ? SICK : RECOVERING);
+        put(CONTAGIOUS_NOT_SICK, CONTAGIOUS_TIME, () -> Math.random() > sickRate && Math.random() < recoverRate ? RECOVERING : SICK);
         put(RECOVERING, RECOVERING_TIME, () -> Math.random() < recoverRate ? RECOVERED : RECOVERING);
-        put(SICK, CONTAGIOUS_TIME, () -> Math.random() < dieRate ? DEAD : RECOVERING);
+        put(SICK, CONTAGIOUS_TIME, () -> Math.random() < dieRate ? DEAD : Math.random() < recoverRate? RECOVERING : SICK);
         put(HEALTHY, NOTHING, () -> Math.random() > ACCIDENT_RATE ? HEALTHY : DEAD);
-        put(INFECTED, NOTHING, () -> Math.random() > ACCIDENT_RATE ? HEALTHY : DEAD);
-        put(CONTAGIOUS, NOTHING, () -> Math.random() > ACCIDENT_RATE ? HEALTHY : DEAD);
-        put(CONTAGIOUS_NOT_SICK, NOTHING, () -> Math.random() > ACCIDENT_RATE ? CONTAGIOUS_NOT_SICK : DEAD);
-        put(SICK, NOTHING, () -> Math.random() > ACCIDENT_RATE ? SICK : DEAD);
         put(RECOVERED, NOTHING, () -> Math.random() > ACCIDENT_RATE ? RECOVERED : DEAD);
     }
 
