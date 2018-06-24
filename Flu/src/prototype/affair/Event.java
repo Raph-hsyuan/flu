@@ -7,6 +7,4 @@ package prototype.affair;
  */
 public enum Event {
     CONTACT, INCUBATION_TIME, CONTAGIOUS_TIME, RECOVERING_TIME, NOTHING;
-    
-    
 }

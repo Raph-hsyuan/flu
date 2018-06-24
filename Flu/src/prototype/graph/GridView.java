@@ -26,6 +26,7 @@ import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import prototype.core.Sandbox;
 import prototype.core.Simulator;
+import prototype.virus.Virus;
 import prototype.vivant.*;
 import static prototype.affair.State.*;
 
@@ -36,39 +37,41 @@ import static prototype.affair.State.*;
  * 
  * @author Michael Kölling and David J. Barnes
  * @author Peter Sander
+ * @author HUANG Shenyuan
  * @version 2017.03.24
  */
-@SuppressWarnings("serial")
+
 public class GridView extends Application implements SimulatorView {
     private static GridView instance;
     private static final int LABEL_HEIGHT = 50;
     private static final Color EMPTY_COLOR = Color.WHITE;
-    private final String STEP_PREFIX = "Day: ";
+    private static final String STEP_PREFIX = "Day: ";
     private Label stepLabel;
     private TextFlow population = new TextFlow();
     private FieldView fieldView;
     private Simulator simulator;
     private List<SimulatorView> views = new ArrayList<>();
-    static private AnimationTimer timer;
-    static Slider speedSlider;
+    private static AnimationTimer timer;
+    private static Slider speedSlider;
+    private Slider infectRateSlider = new Slider(0, 1, 0.1);
+    private Slider recoverRateSlider = new Slider(0, 1, 0.1);
+    private Slider dieRateSlider = new Slider(0, 1, 0.1);
+    private Slider sickRateSlider = new Slider(0, 1, 0.1);
+    private Slider dieAnimalSlider = new Slider(0, 1, 0.1);
     private Thread threadOneStep = new Thread();
     private boolean isFirstTime = true;
     // A map for storing colors for participants in the simulation
-    private final Map<Class<? extends Vivant>, Color> colors = new HashMap<Class<? extends Vivant>, Color>() {
-        {
-            put(Human.class, Color.ORANGE);
-            put(Pig.class, Color.PINK);
-            put(Chicken.class, Color.YELLOW);
-        }
-    };
+    private final Map<Class<? extends Vivant>, Color> colors = new HashMap<Class<? extends Vivant>, Color>();
     // A statistics object computing and storing simulation information
     private FieldStats stats;
     private int width;
     private int height;
-    private BorderPane root;
 
     public GridView() {
         this(Sandbox.SIZE, Sandbox.SIZE);
+        colors.put(Human.class, Color.ORANGE);
+        colors.put(Pig.class, Color.PINK);
+        colors.put(Chicken.class, Color.YELLOW);
     }
 
     /**
@@ -99,6 +102,7 @@ public class GridView extends Application implements SimulatorView {
      */
     @Override
     public void start() {
+        BorderPane root;
         Stage stage = new Stage();
         stage.setTitle("Flu");
         root = new BorderPane();
@@ -177,26 +181,26 @@ public class GridView extends Application implements SimulatorView {
     }
 
     void buildStateStatistic(Sandbox field) {
-        Text cC = new Text("\n██");
+        Text cC = new Text("\n█");
         cC.setFill(Color.RED);
         Text c = new Text("Contagious: " + Simulator.getNumber(CONTAGIOUS));
 
-        Text hC = new Text("\n██");
+        Text hC = new Text("\n█");
         hC.setFill(Color.ORANGE);
         Text h = new Text("Healthy: " + Simulator.getNumber(HEALTHY));
 
-        Text dC = new Text("\n██");
+        Text dC = new Text("\n█");
         dC.setFill(Color.BLACK);
         Text d = new Text("Dead: " + Simulator.getNumber(DEAD));
 
-        Text rC = new Text("\n██");
+        Text rC = new Text("\n█");
         rC.setFill(Color.GREEN);
         Text r = new Text("Recovered: " + Simulator.getNumber(RECOVERED));
 
-        Text sC = new Text("\n██");
+        Text sC = new Text("\n█");
         sC.setFill(Color.RED);
         Text s = new Text("Sick: " + Simulator.getNumber(SICK));
-        population.getChildren().addAll(cC,c,hC,h,dC,d,sC,s,rC,r);
+        population.getChildren().addAll(cC, c, hC, h, dC, d, sC, s, rC, r);
 
     }
 
@@ -204,15 +208,15 @@ public class GridView extends Application implements SimulatorView {
         population.getChildren().clear();
         stats.countFinished();
 
-        Text humanC = new Text("\n██");
+        Text humanC = new Text("\n█");
         humanC.setFill(Color.ORANGE);
         Text human = new Text(stats.getPopulationDetails(field, new Human()));
 
-        Text pigC = new Text("\n██");
+        Text pigC = new Text("\n█");
         pigC.setFill(Color.PINK);
         Text pig = new Text(stats.getPopulationDetails(field, new Pig()));
 
-        Text chickenC = new Text("\n██");
+        Text chickenC = new Text("\n█");
         chickenC.setFill(Color.YELLOW);
         Text chicken = new Text(stats.getPopulationDetails(field, new Chicken()));
 
@@ -301,6 +305,7 @@ public class GridView extends Application implements SimulatorView {
      */
     @Override
     public void start(Stage primaryStage) {
+        setVirus();
         views.forEach(v -> v.start());
         simulator = new Simulator(views.toArray(new SimulatorView[0]));
         if (timer == null) {
@@ -335,19 +340,44 @@ public class GridView extends Application implements SimulatorView {
             };
             setTimer(timer);
         }
-        timer.start();
     }
 
+    private void setVirus() {
+        Virus virus = new Virus("UserVirus",infectRateSlider.getValue(),
+                recoverRateSlider.getValue()*0.3,
+                dieRateSlider.getValue(),
+                sickRateSlider.getValue(),
+                dieAnimalSlider.getValue());
+        Simulator.setChickenVirus(virus);
+        Simulator.setPigVirus(virus);
+    }
+    
     private Parent createContent() {
         VBox root = new VBox();
         root.setAlignment(Pos.CENTER);
+        buildRateSliders();
         Button pauseBtn = new Button("Pause");
         pauseBtn.setOnAction(evt -> timer.stop());
-        Button continueBtn = new Button("Carry on");
-        continueBtn.setOnAction(evt -> timer.start());
+        Button startBtn = new Button("Start");
+        startBtn.setOnAction(evt -> {timer.start();setVirus();});
         HBox speedBox = new HBox();
         speedBox.setAlignment(Pos.CENTER);
-        speedSlider = new Slider(0, 1, 0.9); // in secs
+        HBox infectRateBox = new HBox();
+        infectRateBox.setAlignment(Pos.CENTER);
+        infectRateBox.getChildren().addAll(new Label("infectRate"), infectRateSlider);
+        HBox recoverRateBox = new HBox();
+        recoverRateBox.setAlignment(Pos.CENTER);
+        recoverRateBox.getChildren().addAll(new Label("recoverRate"), recoverRateSlider);
+        HBox dieRateBox = new HBox();
+        dieRateBox.setAlignment(Pos.CENTER);
+        dieRateBox.getChildren().addAll(new Label("dieRate"), dieRateSlider);
+        HBox sickRateBox = new HBox();
+        sickRateBox.setAlignment(Pos.CENTER);
+        sickRateBox.getChildren().addAll(new Label("sickRate"), sickRateSlider);
+        HBox dieAnimalBox = new HBox();
+        dieAnimalBox.setAlignment(Pos.CENTER);
+        dieAnimalBox.getChildren().addAll(new Label("dieAnimalRate"), dieAnimalSlider);
+        speedSlider = new Slider(0, 1, 0.5); // in secs
         speedSlider.setShowTickMarks(true);
         speedSlider.setShowTickLabels(true);
         speedSlider.setMajorTickUnit(0.25f);
@@ -355,10 +385,31 @@ public class GridView extends Application implements SimulatorView {
         speedBox.getChildren().addAll(new Label("Slow"), speedSlider, new Label("Fast"));
         Button quitBtn = new Button("Quit");
         quitBtn.setOnAction(evt -> Platform.exit());
-        root.getChildren().addAll(pauseBtn, continueBtn, quitBtn, speedBox);
+        root.getChildren().addAll(infectRateBox,recoverRateBox,dieRateBox,sickRateBox,dieAnimalBox,
+                startBtn, pauseBtn, quitBtn, speedBox);
         return root;
     }
 
+    void buildRateSliders() {
+        infectRateSlider = new Slider(0, 1, 0.1);
+        recoverRateSlider = new Slider(0, 1, 0.1);
+        dieRateSlider = new Slider(0, 1, 0.1);
+        sickRateSlider = new Slider(0, 1, 0.1);
+        dieAnimalSlider = new Slider(0, 1, 0.1);
+        
+        List<Slider> rateSliders = new ArrayList<>();
+        rateSliders.add(infectRateSlider);
+        rateSliders.add(recoverRateSlider);
+        rateSliders.add(dieRateSlider);
+        rateSliders.add(sickRateSlider);
+        rateSliders.add(dieAnimalSlider);
+        for(Slider s : rateSliders) {
+            s.setShowTickMarks(true);
+            s.setShowTickLabels(true);
+            s.setMajorTickUnit(0.1f);
+            s.setBlockIncrement(0.1f);
+        }
+    }
     void setTimer(AnimationTimer timers) {
         timer = timers;
     }

@@ -6,6 +6,7 @@ import java.util.Random;
 
 import prototype.vivant.Vivant;
 import static prototype.affair.State.*;
+
 /**
  * @author HUANG Shenyuan
  * @date 2018-02-23 09:23
@@ -23,7 +24,7 @@ public class Sandbox {
     Sandbox() {
         for (int x = 0; x < SIZE; x++)
             for (int y = 0; y < SIZE; y++) {
-                locations[x][y] = new Location(x,y);
+                locations[x][y] = new Location(x, y);
                 videSpace.add(locations[x][y]);
             }
     }
@@ -77,15 +78,15 @@ public class Sandbox {
         neighbor[7] = locations[xm1][y];
         return neighbor;
     }
-    
+
     Location[] getNeighbor(int x, int y) {
-        return getNeighbor(new Location(x,y));
+        return getNeighbor(new Location(x, y));
     }
 
     public Location getLocation(int x, int y) {
         return locations[x][y];
     }
-    
+
     @Override
     public String toString() {
         StringBuilder table = new StringBuilder();
@@ -102,8 +103,16 @@ public class Sandbox {
         for (int y = 0; y < SIZE; y++) {
             for (int x = 0; x < SIZE; x++) {
                 Vivant find = locations[x][y].getVivant();
-                if(!locations[x][y].isVide()&&find.getState().equals(DEAD))
+                if (!locations[x][y].isVide() && find.getState().equals(DEAD))
                     locations[x][y].removeVivant();
+            }
+        }
+    }
+
+    void removeAll() {
+        for (int y = 0; y < SIZE; y++) {
+            for (int x = 0; x < SIZE; x++) {
+                locations[x][y].removeVivant();
             }
         }
     }

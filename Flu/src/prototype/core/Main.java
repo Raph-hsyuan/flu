@@ -14,7 +14,6 @@ public class Main {
         Simulator test = new Simulator();
         test.run(100);
         System.out.println("end");
-
     }
 
 }

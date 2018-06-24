@@ -22,15 +22,16 @@ import prototype.virus.Virus;
 
 /**
  * @author HUANG Shenyuan
+ * @author Wang Chengzhi
  * @date 2018-03-01 23:15
  * @email shenyuan.huang@etu.unice.fr
  */
 public class Simulator {
-    private double infectRate = 0.02;
-    private double recoverRate = 0.01;
-    private double dieRate = 0.6;
-    private double sickRate = 0.6;
-    private double dieAnimalRate = 0.1;
+    private double infectRate;
+    private double recoverRate;
+    private double dieRate;
+    private double sickRate;
+    private double dieAnimalRate;
     private static int step = 0;
     private static final double ACCIDENT_RATE = 0.000001;
     private static final double SICK_ANIMAL_RATE = 0.4;
@@ -46,17 +47,22 @@ public class Simulator {
     private static int contagious = 0;
     private static int dead = 0;
     private int nothing = 0;
+    private static Virus chickVirus;
+    private static Virus pigVirus;
+    private boolean firstTime = true;
     
     public Simulator(SimulatorView... views) {
         buildDict();
-        setHuman(NOMBER_HUMAN);
-        setChicken(NOMBER_CHICKEN);
-        setPig(NOMBER_PIG);
         Arrays.asList(views).forEach(v -> this.views.add(v));
     }
 
-    Virus H1N1 = new Virus("H1N1", 0.2, 0.4, 0.5, 0.5, 0.2);
-    Virus HHHH = new Virus("HHHH", 0.5, 0.5, 0.5, 0.5, 0.5);
+    public static void setChickenVirus(Virus virus) {
+        chickVirus = virus;
+    }
+    
+    public static void setPigVirus(Virus virus) {
+        pigVirus = virus;
+    }
     
     public static int getNumber(State state) {
         switch(state) {
@@ -70,14 +76,24 @@ public class Simulator {
     }
 
     private void setProperty(Virus virus) {
-//        infect = virus.getInfectrate();
-//        recover = virus.getRecoverrate();
-//        die = virus.getDeadrate();
-//        sick = virus.getSickrate();
-//        dieAnimal = virus.getADeadrate();
+        infectRate = virus.getInfectrate();
+        recoverRate = virus.getRecoverrate();
+        dieRate = virus.getDeadrate();
+        sickRate = virus.getSickrate();
+        dieAnimalRate = virus.getADeadrate();
     }
 
+    private void initialVivant() {
+        if(firstTime) {
+        setHuman(NOMBER_HUMAN);
+        setChicken(NOMBER_CHICKEN);
+        setPig(NOMBER_PIG);
+        firstTime = false;
+        }
+    }
+    
     public int simulateOneStep() {
+        initialVivant();
         step++;
         sandbox.removeDead();
         move();
@@ -93,8 +109,10 @@ public class Simulator {
                         }
                         Event event = dectEvent(location);
                         State state1 = vivant.getState();
-                        if (state1.equals(CONTAGIOUS) || state1.equals(SICK)
-                                || state1.equals(SICK))
+                        if (state1.equals(CONTAGIOUS) 
+                                || state1.equals(SICK)
+                                || state1.equals(CONTAGIOUS_NOT_SICK)
+                                || state1.equals(RECOVERING)||event.equals(CONTACT))
                             setProperty(vivant.getVirus());
                         State state2 = dict.get(state1).get(event).get();
                         vivant.setState(state2);
@@ -226,7 +244,7 @@ public class Simulator {
             Vivant aPig = new Pig();
             if (Math.random() < SICK_ANIMAL_RATE) {
                 aPig.setState(CONTAGIOUS);
-                aPig.setVirus(HHHH);
+                aPig.setVirus(pigVirus);
             }
             sandbox.addVivant(aPig);
         }
@@ -236,7 +254,7 @@ public class Simulator {
         for (int i = 0; i < NOMBER_CHICKEN; i++) {
             Vivant aChicken = new Chicken();
             if (Math.random() < SICK_ANIMAL_RATE) {
-                aChicken.setVirus(H1N1);
+                aChicken.setVirus(chickVirus);
                 aChicken.setState(CONTAGIOUS);
             }
             sandbox.addVivant(aChicken);
@@ -265,11 +283,18 @@ public class Simulator {
     public boolean isViable() {
         if (getNumber(CONTAGIOUS) + getNumber(SICK) == 0)
             nothing++;
-        return nothing > 40 ? false:true;
+        return nothing <= 40;
     }
     
     public void updateViews() {
         views.forEach(v -> v.showStatus(step, this.sandbox));
+    }
+    
+    public void reset() {
+        sandbox.removeAll();
+        setHuman(NOMBER_HUMAN);
+        setChicken(NOMBER_CHICKEN);
+        setPig(NOMBER_PIG);
     }
 
 }
